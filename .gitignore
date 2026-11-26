@@ -1,0 +1,12 @@
+.vscode/
+
+# File eseguibili e artefatti compilati
+*.exe
+*.out
+*.app/
+*.bin
+*.o
+*.obj
+*.so
+*.dll
+*.dylib

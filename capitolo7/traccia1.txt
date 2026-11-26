@@ -1,0 +1,102 @@
+# Esercizio 7.33 – Calcolatore delle emissioni di CO₂
+
+**Argomento:** Array di puntatori a funzioni in C++  
+**Difficoltà:** Livello esame
+
+## Consegna
+
+Realizzare un programma in C++ che permetta di calcolare le emissioni annuali di anidride carbonica (CO₂) prodotte da tre diverse attività:
+
+1. Riscaldamento di un edificio.
+2. Utilizzo di un'automobile.
+3. Utilizzo di una bicicletta.
+
+Il programma deve utilizzare un **array di puntatori a funzioni** per richiamare la funzione corrispondente alla scelta effettuata dall'utente.
+
+## 1. Calcolo delle emissioni di un edificio
+
+Creare una funzione chiamata `edificio()` che chieda all'utente:
+
+- Il tipo di combustibile utilizzato (gas naturale oppure gasolio).
+- Il consumo annuale di combustibile.
+
+Utilizzare i seguenti fattori di emissione:
+
+| Combustibile | Fattore di emissione |
+|---|---|
+| Gas naturale | 2 kg CO₂/m³ |
+| Gasolio | 2,68 kg CO₂/litro |
+
+**Formula:**
+
+`Emissioni = Consumo annuale * Fattore di emissione`
+
+La funzione deve calcolare e stampare le emissioni annuali di CO₂.
+
+## 2. Calcolo delle emissioni di un'automobile
+
+Creare una funzione chiamata `automobile()` che chieda all'utente:
+
+- I chilometri percorsi durante un anno.
+- Il consumo medio dell'automobile ogni 100 km.
+- Il tipo di carburante utilizzato (benzina oppure diesel).
+
+Utilizzare i seguenti fattori di emissione:
+
+| Carburante | Fattore di emissione |
+|---|---|
+| Benzina | 2,31 kg CO₂/litro |
+| Diesel | 2,68 kg CO₂/litro |
+
+**Formule:**
+
+`Litri consumati = (Chilometri annuali / 100) * Consumo medio`
+
+`Emissioni = Litri consumati * Fattore di emissione`
+
+La funzione deve calcolare e stampare le emissioni annuali di CO₂.
+
+## 3. Calcolo delle emissioni di una bicicletta
+
+Creare una funzione chiamata `bicicletta()` che chieda all'utente:
+
+- I chilometri percorsi durante un anno in bicicletta.
+
+Considerando che la bicicletta non utilizza carburante durante il suo funzionamento, le emissioni dirette di CO₂ sono pari a zero.
+
+La funzione deve stampare il risultato.
+
+*Nota: non vengono considerate le emissioni indirette legate alla produzione della bicicletta.*
+
+## 4. Array di puntatori a funzioni
+
+Dichiarare le tre funzioni con le seguenti caratteristiche:
+
+- Non devono ricevere parametri.
+- Devono restituire `void`.
+- Devono richiedere autonomamente i dati all'utente.
+- Devono effettuare il calcolo e stampare il risultato.
+
+Successivamente, creare un array contenente i puntatori alle tre funzioni.
+
+## 5. Menu principale
+
+Nel `main()` creare un menu che permetta all'utente di scegliere quale emissione calcolare:
+
+1. Emissioni di un edificio.
+2. Emissioni di un'automobile.
+3. Emissioni di una bicicletta.
+
+In base alla scelta effettuata, il programma deve richiamare la funzione corrispondente utilizzando esclusivamente l'array di puntatori a funzioni.
+
+## 6. Vincoli da rispettare
+
+- Utilizzare il linguaggio C++.
+- Utilizzare tre funzioni di tipo `void` senza parametri.
+- Utilizzare un array di puntatori a funzioni.
+- Non utilizzare variabili globali.
+- Non richiamare direttamente le funzioni nel `main()`.
+- Controllare che la scelta dell'utente sia valida.
+- Stampare il risultato del calcolo in kg di CO₂.
+
+**Obiettivo finale:** realizzare un programma completo che dimostri la capacità di utilizzare correttamente gli array di puntatori a funzioni in C.

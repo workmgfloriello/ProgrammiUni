@@ -1,0 +1,122 @@
+# ESERCIZIO – GESTIONE DELLE VENDITE DI UN MAGAZZINO
+
+**Argomento:** Array bidimensionali, funzioni, ricerca lineare, cicli e strutture di selezione in linguaggio C.
+
+## Descrizione del problema
+
+Un'azienda desidera realizzare un programma in linguaggio C per gestire le vendite dei propri prodotti durante l'anno.
+
+L'azienda commercializza **5 prodotti** e desidera registrare, per ciascuno di essi, il numero di unità vendute nei quattro trimestri dell'anno (T1, T2, T3 e T4).
+
+Per memorizzare queste informazioni si utilizzi una **matrice di interi di dimensione 5 × 5**, nella quale:
+
+- La prima colonna contiene il codice identificativo (ID) del prodotto.
+- Le successive quattro colonne contengono il numero di vendite registrate nei rispettivi trimestri.
+
+La matrice dovrà essere inizializzata con tutti i valori impostati a zero.
+
+Il programma dovrà essere organizzato in funzioni e dovrà presentare un menu interattivo che permetta all'utente di scegliere quale operazione eseguire.
+
+## Specifiche richieste
+
+Realizzare un programma che implementi le seguenti funzionalità.
+
+**1. Visualizzazione della matrice**
+
+Visualizzare tutti i dati memorizzati nella matrice, utilizzando una tabella ordinata che riporti:
+
+- ID del prodotto;
+- Vendite del primo trimestre;
+- Vendite del secondo trimestre;
+- Vendite del terzo trimestre;
+- Vendite del quarto trimestre.
+
+**2. Inserimento dei dati**
+
+Consentire all'utente di inserire i dati relativi a tutti e cinque i prodotti.
+
+Per ciascun prodotto bisognerà richiedere:
+- Il codice identificativo (ID).
+- Il numero di vendite registrate nel primo trimestre.
+- Il numero di vendite registrate nel secondo trimestre.
+- Il numero di vendite registrate nel terzo trimestre.
+- Il numero di vendite registrate nel quarto trimestre.
+
+**3. Modifica dei dati di un prodotto**
+
+Consentire all'utente di modificare le informazioni relative a un prodotto già presente nella matrice.
+
+La ricerca del prodotto dovrà avvenire attraverso il suo ID, utilizzando una tecnica di **ricerca lineare (Linear Search)**.
+
+Una volta individuato il prodotto, permettere la modifica dei singoli campi.
+
+Per semplificare l'operazione, l'utente potrà inserire il valore `-1` per indicare che il campo corrispondente non deve essere modificato.
+
+Se il prodotto non viene trovato, visualizzare un opportuno messaggio di errore.
+
+**4. Calcolo della media delle vendite di un prodotto**
+
+Richiedere all'utente l'ID di un prodotto e calcolare la media delle vendite registrate nei quattro trimestri.
+
+Se il prodotto non è presente nella matrice, visualizzare un messaggio di errore.
+
+**5. Visualizzazione delle vendite di un prodotto in un trimestre**
+
+Richiedere all'utente:
+- L'ID del prodotto.
+- Il trimestre di interesse.
+
+Visualizzare il numero di unità vendute dal prodotto nel trimestre selezionato.
+
+Se il prodotto o il trimestre non sono validi, visualizzare un messaggio di errore.
+
+**6. Calcolo della media delle vendite di un trimestre**
+
+Richiedere all'utente il numero del trimestre e calcolare la media delle vendite di tutti i prodotti durante quel periodo.
+
+La media dovrà essere calcolata considerando i cinque prodotti presenti nella matrice.
+
+**7. Individuazione del prodotto con il maggior numero di vendite**
+
+Individuare il prodotto che ha registrato il maggior numero di vendite in un singolo trimestre.
+
+Visualizzare:
+- L'ID del prodotto.
+- Il numero massimo di vendite registrate.
+
+Per individuare il valore massimo sarà necessario confrontare i dati contenuti nelle quattro colonne dedicate alle vendite, escludendo la colonna degli ID.
+
+## Menu principale
+
+Il programma dovrà mostrare il seguente menu:
+
+1. Stampa matrice
+2. Inserisci tutti i dati
+3. Aggiorna dati di un prodotto
+4. Media vendite di un prodotto
+5. Vendite di un prodotto in un trimestre
+6. Media vendite di un trimestre
+7. Prodotto con il maggior numero di vendite
+8. Ristampa menu
+9. Pulisci console
+0. Esci
+
+Il menu dovrà essere visualizzato all'avvio del programma e dovrà rimanere disponibile fino a quando l'utente non sceglierà l'opzione 0.
+
+## Vincoli di implementazione
+
+- Utilizzare il linguaggio di programmazione C.
+- Utilizzare una matrice bidimensionale di interi di dimensione 5 × 5.
+- Organizzare il programma attraverso funzioni specifiche per ogni operazione.
+- Passare la matrice alle funzioni come parametro.
+- Utilizzare cicli `for` per scorrere righe e colonne.
+- Utilizzare strutture di selezione `if` e `switch`.
+- Implementare la ricerca dei prodotti mediante ricerca lineare.
+- Utilizzare variabili di tipo `float` per i calcoli delle medie, in modo da ottenere risultati con la parte decimale.
+- Gestire opportunamente i casi in cui un prodotto non venga trovato.
+
+## Obiettivo didattico
+
+L'esercizio ha lo scopo di consolidare la conoscenza degli array bidimensionali e della programmazione modulare attraverso l'utilizzo delle funzioni.
+
+In particolare, permette di esercitarsi nella gestione e nell'attraversamento di matrici, nella ricerca di elementi, nell'aggiornamento dei dati e nell'elaborazione di informazioni numeriche.

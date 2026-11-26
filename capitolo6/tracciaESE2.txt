@@ -1,0 +1,141 @@
+# ESERCIZIO – ANALISI DEL TRAFFICO URBANO
+
+**Argomenti:** Array monodimensionali e bidimensionali, funzioni, ricerca lineare, ordinamento, algoritmi di confronto, minimi, massimi e statistiche.
+
+## 1. Descrizione del problema
+
+Un comune desidera realizzare un programma per monitorare il traffico veicolare registrato in cinque diverse zone della città durante una settimana lavorativa.
+
+Per ogni zona vengono registrati il numero di veicoli transitati in ciascuno dei cinque giorni lavorativi (dal lunedì al venerdì).
+
+I dati vengono raccolti attraverso sensori installati nelle seguenti zone:
+
+- Centro storico
+- Zona industriale
+- Zona residenziale
+- Zona commerciale
+- Zona periferica
+
+Il programma dovrà utilizzare una matrice bidimensionale di dimensione 5 × 5, nella quale:
+
+- Ogni riga rappresenta una zona della città.
+- Ogni colonna rappresenta un giorno della settimana.
+- Ogni elemento contiene il numero di veicoli registrati nella relativa zona e giornata.
+
+Utilizzare inoltre un array monodimensionale per memorizzare il nome o il codice identificativo delle cinque zone.
+
+## 2. Operazioni richieste
+
+### 1. Inserimento dei rilevamenti
+
+Permettere all'utente di inserire il numero di veicoli transitati in ogni zona durante ciascun giorno lavorativo.
+
+I valori inseriti dovranno essere maggiori o uguali a zero.
+
+Oppure devono essere generati in modo random tra 0 e 5000
+
+### 2. Visualizzazione della matrice
+
+Stampare tutti i rilevamenti sotto forma di tabella, mostrando le zone sulle righe e i giorni sulle colonne.
+
+### 3. Analisi del traffico di una zona
+
+Richiedere all'utente il codice della zona da analizzare.
+
+Visualizzare:
+- Totale dei veicoli transitati durante la settimana.
+- Media giornaliera.
+- Giorno con il traffico maggiore.
+- Giorno con il traffico minore.
+
+La ricerca della zona dovrà essere effettuata mediante ricerca lineare.
+
+### 4. Analisi del traffico giornaliero
+
+Richiedere un giorno della settimana e calcolare il numero totale di veicoli transitati in tutte le zone.
+
+Visualizzare anche il giorno che ha registrato il maggior traffico durante quella giornata.
+
+### 5. Individuazione della zona più trafficata
+
+Calcolare il totale settimanale dei veicoli per ciascuna zona.
+
+Individuare e visualizzare la zona che ha registrato il maggior numero di transiti complessivi.
+
+### 6. Individuazione della giornata più trafficata
+
+Calcolare il totale dei veicoli registrati in tutte le zone per ciascun giorno.
+
+Individuare il giorno in cui è stato registrato il maggior numero complessivo di veicoli.
+
+### 7. Ordinamento delle zone per traffico
+
+Creare una classifica delle cinque zone in base al numero totale di veicoli transitati durante la settimana.
+
+L'ordinamento dovrà essere effettuato in ordine decrescente.
+
+Utilizzare un algoritmo di ordinamento studiato durante le lezioni.
+
+Attenzione: durante l'ordinamento dovrà essere mantenuta la corrispondenza tra il codice della zona e i relativi dati.
+
+### 8. Individuazione delle anomalie
+
+Il comune desidera individuare eventuali giornate caratterizzate da un traffico particolarmente elevato.
+
+Per ogni zona calcolare la media giornaliera dei veicoli.
+
+Successivamente individuare tutti i giorni in cui il traffico registrato supera del 50% la media giornaliera della relativa zona.
+
+Visualizzare la zona, il giorno e il numero di veicoli registrati.
+
+### 9. Confronto tra due zone
+
+Consentire all'utente di selezionare due zone differenti.
+
+Confrontare i rispettivi rilevamenti giornalieri e determinare:
+
+- Quale zona ha registrato più veicoli complessivamente.
+- In quanti giorni la prima zona ha registrato più traffico della seconda.
+- In quale giorno è stata registrata la maggiore differenza di traffico tra le due zone.
+
+## 3. Menu principale
+
+1. Inserimento dei rilevamenti
+2. Visualizzazione della matrice
+3. Analisi del traffico di una zona
+4. Analisi del traffico giornaliero
+5. Zona più trafficata
+6. Giornata più trafficata
+7. Classifica delle zone
+8. Individuazione delle anomalie
+9. Confronto tra due zone
+0. Uscita
+
+Il menu dovrà essere ripetuto fino alla selezione dell'opzione 0.
+
+## 4. Vincoli di implementazione
+
+- Utilizzare il linguaggio C.
+- Utilizzare una matrice bidimensionale di dimensione 5 × 5.
+- Utilizzare un array monodimensionale per identificare le zone.
+- Suddividere il programma in funzioni.
+- Passare array e matrici alle funzioni attraverso i parametri.
+- Utilizzare cicli `for` per attraversare le strutture dati.
+- Implementare manualmente gli algoritmi di ricerca e ordinamento.
+- Non utilizzare variabili globali.
+- Non utilizzare strutture `struct`.
+- Non utilizzare librerie esterne per la gestione e l'elaborazione dei dati.
+
+## 5. Obiettivi didattici
+
+L'esercizio permette di consolidare l'utilizzo delle matrici attraverso un problema che richiede elaborazioni sia per riga sia per colonna.
+
+In particolare, lo studente dovrà dimostrare di saper:
+
+- Attraversare una matrice in entrambe le direzioni.
+- Calcolare somme e medie.
+- Individuare minimi e massimi.
+- Confrontare righe e colonne.
+- Effettuare ordinamenti mantenendo le associazioni tra dati.
+- Implementare algoritmi di ricerca.
+- Analizzare e confrontare insiemi di dati.
