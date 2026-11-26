@@ -1,6 +1,16 @@
 //Leggo numero in virgola fissa +-II,FF
 +32050
+//Leggo un numeor intero A e lo salvo nella cella 50
++32032
+//Assegno il valore ad EAX
++16050
+//Carico A nell'accumulatore
++14032
+//Faccio la somma in float
++34000
+//Store del risultato 
++15056
 //Stampo il numero
-+33050
++33056
 //ESCO
 +2B000

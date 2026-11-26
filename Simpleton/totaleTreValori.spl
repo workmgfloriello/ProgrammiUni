@@ -1,0 +1,70 @@
+// SOMMA E CLASSIFICAZIONE DI TRE VALORI IN VIRGOLA FISSA
+// Inserisci tre numeri tra -99.99 e 99.99; anche la loro somma deve restare in questo intervallo.
+// Il risultato viene stampato seguito da un codice: -1 se negativo, 0 se zero, 1 se positivo.
+// Ogni riga di istruzione ha formato +OOVVV: OO e' l'opcode esadecimale, VVV l'operando esadecimale.
+// Gli indirizzi di salto indicano la posizione dell'istruzione in memoria; i commenti non occupano celle.
+// CELLE DATI: 80-82 input, 83 somma parziale, 84 totale, 85 zero, 86 codice del segno.
+// I valori in virgola fissa sono codificati con 2 cifre intere e 2 decimali.
+// Per i valori negativi la codifica aggiunge 10000 come indicatore di segno.
+// ISTRUZIONE 00: READ_F (opcode 0x32 = 50). Legge il primo numero nella cella 80 (0x050).
++32050
+// ISTRUZIONE 01: READ_F. Legge il secondo numero nella cella 81 (0x051).
++32051
+// ISTRUZIONE 02: LOAD_EAX (opcode 0x16 = 22). Copia il secondo numero da cella 81 nel registro EAX.
++16051
+// ISTRUZIONE 03: LOAD (opcode 0x14 = 20). Carica il primo numero, dalla cella 80, nell'accumulatore.
++14050
+// ISTRUZIONE 04: ADD_F (opcode 0x34 = 52). Somma il valore in EAX all'accumulatore.
++34000
+// ISTRUZIONE 05: STORE (opcode 0x15 = 21). Salva la somma parziale nella cella 83 (0x053).
++15053
+// ISTRUZIONE 06: READ_F. Legge il terzo numero nella cella 82 (0x052).
++32052
+// ISTRUZIONE 07: LOAD_EAX. Copia il terzo numero, dalla cella 82, nel registro EAX.
++16052
+// ISTRUZIONE 08: LOAD. Carica nell'accumulatore la somma parziale dalla cella 83.
++14053
+// ISTRUZIONE 09: ADD_F. Aggiunge il terzo numero all'accumulatore.
++34000
+// ISTRUZIONE 10: STORE. Salva il totale nella cella 84 (0x054).
++15054
+// ISTRUZIONE 11: LOAD. Carica il totale per controllarne il segno.
++14054
+// ISTRUZIONE 12: BRANCHZERO (opcode 0x2A = 42). Se il totale e' zero, salta all'istruzione 23.
++2A017
+// ISTRUZIONE 13: LOAD. Ricarica il totale prima del controllo del segno.
++14054
+// ISTRUZIONE 14: SUBTRACT (opcode 0x1F = 31). Sottrae 10000, costante nella cella 29 (0x01D).
++1F01D
+// ISTRUZIONE 15: BRANCHNEG (opcode 0x29 = 41). Se il risultato e' negativo, il totale originale era positivo.
+// Salta all'istruzione 20. Un totale negativo codificato include gia' 10000, quindi dopo la sottrazione resta >= 0.
++29014
+// ISTRUZIONE 16: LOAD. Carica zero dalla cella 85 nell'accumulatore.
++14055
+// ISTRUZIONE 17: SUBTRACT. Sottrae 1, costante nella cella 28 (0x01C), ottenendo -1.
++1F01C
+// ISTRUZIONE 18: STORE. Salva -1 nella cella 86 (0x056): il totale e' negativo.
++15056
+// ISTRUZIONE 19: BRANCH (opcode 0x28 = 40). Salta all'istruzione 25 per stampare il risultato.
++28019
+// ISTRUZIONE 20: LOAD. Carica 1 dalla cella 28 nell'accumulatore.
++1401C
+// ISTRUZIONE 21: STORE. Salva 1 nella cella 86: il totale e' positivo.
++15056
+// ISTRUZIONE 22: BRANCH. Salta all'istruzione 25 per stampare il risultato.
++28019
+// ISTRUZIONE 23: LOAD. Carica zero dalla cella 85 nell'accumulatore.
++14055
+// ISTRUZIONE 24: STORE. Salva 0 nella cella 86: il totale e' zero.
++15056
+// ISTRUZIONE 25: WRITE_F (opcode 0x33 = 51). Stampa il totale dalla cella 84.
++33054
+// ISTRUZIONE 26: WRITE (opcode 0x0B = 11). Stampa il codice del segno dalla cella 86.
++0B056
+// ISTRUZIONE 27: HALT (opcode 0x2B = 43). Termina l'esecuzione prima dei dati costanti.
++2B000
+// DATO IN CELLA 28 (0x01C): valore costante 1. Non e' un'istruzione: viene letto dagli operandi sopra.
++00001
+// DATO IN CELLA 29 (0x01D): opcode esadecimale 0x0A equivale a 10, quindi 10 * 1000 = 10000.
+// Viene usato dall'istruzione 14 per distinguere i numeri positivi da quelli negativi.
++0A000

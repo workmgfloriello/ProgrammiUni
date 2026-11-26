@@ -1,17 +1,15 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "./utils/utilsFunction.h"
 #include "./function/SMLFunction.h"
 
 void welcome();
 void loadProgram(int *memory, char *fileName);
-void dump(int, int, int, int, int, int, int[MEMORY_SIZE]);
-void instructionCycle(int *, int *, int *, int *, int *, int *, int *);
+void dump(int, int, int, int, int, int, int,int[MEMORY_SIZE]);
+void instructionCycle(int *, int *, int *, int *, int *, int *,int *, int *);
 
 int main()
 {
-
     int memory[MEMORY_SIZE] = {0};
     // REGISTER
     int accumulator = 0;         // Accumulatore
@@ -20,12 +18,12 @@ int main()
     int operationCode = 0;       // Operazione che viene eseguita(prime due cifre)
     int operand = 0;             // Locazione di memoria su cui avviene l'operazione (ultime due cifre)
     int stateFlag = READY;       // Flag di stato di un operazione
-    int EAX = 0;                 // REgsitro Extended Accumulator Register
+    int EAX = 0;                 // Regsitro Extended Accumulator Register
 
     welcome();
-    loadProgram(memory, "virgolaFissa.spl");
+    loadProgram(memory, "totaleTreValori.spl");
     // dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, memory);
-    instructionCycle(&accumulator, &instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag, memory);
+    instructionCycle(&accumulator, &instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag,&EAX, memory);
     return 0;
 }
 
@@ -44,6 +42,7 @@ void loadProgram(int *memory, char *fileName)
 {
     int memoryIndex = 0;
     printf("\n*** Loadin programm %s ***\n", fileName);
+
     // Attraverso la struct File apre il fileName.txt in modalità read
     FILE *fp = fopen(fileName, "r");
 
@@ -62,7 +61,6 @@ void loadProgram(int *memory, char *fileName)
     while (fgets(riga, sizeof(riga), fp) != NULL)
     {
         // Rimuove l'eventuale \n
-
         // Scorre carattere per carattere verificando la condizione se ha riga = \n
         // lo sostituisce con "\0"
         riga[strcspn(riga, "\n")] = '\0';
@@ -70,6 +68,7 @@ void loadProgram(int *memory, char *fileName)
         // Skippo commenti
         if (riga[0] == '/' && riga[1] == '/')
             continue;
+
         printf("[%03d] => %s\n", memoryIndex, riga);
 
         // Prendo i primi due caratteri e da HEX li passo a DEC
@@ -82,9 +81,11 @@ void loadProgram(int *memory, char *fileName)
 
         // Creao unico intero
         int number = (opCode * 1000) + operandCode;
+
         // Salvo in "memoria" il numero e incremento l'index
         if (number == -999999)
             break;
+
         memory[memoryIndex] = number;
         memoryIndex++;
     }
@@ -98,11 +99,10 @@ void loadProgram(int *memory, char *fileName)
     printf("*** Program loading completed ***\n*** Program execution begins ***");
 }
 
-void instructionCycle(int *accumulator,int *instructionCounter,int *instructionRegister,int *operationCode,int *operand,int *stateFlag,int *memory)
+void instructionCycle(int *accumulator, int *instructionCounter, int *instructionRegister, int *operationCode, int *operand, int *stateFlag,int *EAX, int *memory)
 {
     while (1)
     {
-
         *instructionRegister = memory[*instructionCounter];
         (*instructionCounter)++;
 
@@ -115,7 +115,6 @@ void instructionCycle(int *accumulator,int *instructionCounter,int *instructionR
 
         switch (*operationCode)
         {
-
         case READ:
             smlRead(memory, *operand, stateFlag);
             break;
@@ -131,21 +130,27 @@ void instructionCycle(int *accumulator,int *instructionCounter,int *instructionR
         case LOAD:
             smlLoad(accumulator, memory, *operand);
             break;
+        
+        case LOAD_EAX:
+            smlLoadEAX(EAX ,memory,*operand);
+            break; 
+
+        case STORE_EAX:
+            smlStoreEAX(EAX, memory, *operand);
+            break;
 
         case STORE:
             smlStore(*accumulator, memory, *operand);
             break;
 
         case ADD:
-            stop = smlAdd(accumulator, memory, *operand,
-                          stateFlag, instructionCounter,
-                          instructionRegister, operationCode, operand);
+            stop = smlAdd(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
-
+        case ADD_F:
+            stop= smlAddFloat(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            break;
         case SUBTRACT:
-            stop = smlSubtract(accumulator, memory, *operand,
-                               stateFlag, instructionCounter,
-                               instructionRegister, operationCode, operand);
+            stop = smlSubtract(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
 
         case DIVIDE:
@@ -153,9 +158,7 @@ void instructionCycle(int *accumulator,int *instructionCounter,int *instructionR
             break;
 
         case MULTIPLY:
-            stop = smlMultiply(accumulator, memory, *operand,
-                               stateFlag, instructionCounter,
-                               instructionRegister, operationCode, operand);
+            stop = smlMultiply(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
 
         case MOD:
@@ -163,9 +166,7 @@ void instructionCycle(int *accumulator,int *instructionCounter,int *instructionR
             break;
 
         case POW:
-            stop = smlPow(accumulator, memory, *operand,
-                          stateFlag, instructionCounter,
-                          instructionRegister, operationCode, operand);
+            stop = smlPow(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
 
         case BRANCH:
@@ -189,35 +190,18 @@ void instructionCycle(int *accumulator,int *instructionCounter,int *instructionR
             break;
 
         case HALT:
-            smlHalt(
-                *accumulator,
-                *instructionCounter,
-                *instructionRegister,
-                *operationCode,
-                *operand,
-                *stateFlag,
-                memory);
+            smlHalt(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, *EAX, memory);
             return;
 
         default:
-            printf(BOLD RED
-                   "\n*** [ERROR] Invalid operation code: %d ***\n" RESET,
-                   *operationCode);
+            printf(BOLD RED "\n*** [ERROR] Invalid operation code: %d ***\n" RESET, *operationCode);
             return;
         }
 
         if (stop)
         {
-            dump(
-                *accumulator,
-                *instructionCounter,
-                *instructionRegister,
-                *operationCode,
-                *operand,
-                *stateFlag,
-                memory);
+            dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, *EAX, memory);
             return;
         }
     }
 }
-

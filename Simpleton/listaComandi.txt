@@ -15,5 +15,5 @@
 #define HALT 43
 // Lista stati dell'istruzione (flag)
 #define ERROR 0
-#define OVERFLOW -1
+#define OVERF -1
 #define READY 1
