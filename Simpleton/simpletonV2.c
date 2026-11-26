@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 // DEFINE ESSENZIALI
 // Lettura file e diensizoni memoria
@@ -41,6 +42,7 @@ void loadProgram(int *memory, char *fileName);
 void dump(int, int, int, int, int, int, int[MEMORY_SIZE]);
 void instructionCycle(int *, int *, int *, int *, int *, int *, int *);
 void checkOverflow(int, int *);
+int HextoDec(char *, int);
 
 int main()
 {
@@ -56,8 +58,8 @@ int main()
 
     welcome();
     loadProgram(memory, "test.spl");
-    //dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, memory);
-    instructionCycle(&accumulator,&instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag, memory);
+    // dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, memory);
+    instructionCycle(&accumulator, &instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag, memory);
     return 0;
 }
 
@@ -98,10 +100,22 @@ void loadProgram(int *memory, char *fileName)
         // Scorre carattere per carattere verificando la condizione se ha riga = \n
         // lo sostituisce con "\0"
         riga[strcspn(riga, "\n")] = '\0';
-        printf("[%03d] ? %s\n", memoryIndex, riga);
 
-        // Converto la riga in un numero exa la funzione atoi();
-        int number = atoi(riga);
+        // Skippo commenti
+        if (riga[0] == '/' && riga[1] == '/')
+            continue;
+        printf("[%03d] => %s\n", memoryIndex, riga);
+
+        // Prendo i primi due caratteri e da HEX li passo a DEC
+        char opCodeString[2] = {riga[1], riga[2]};
+        int opCode = HextoDec(opCodeString, 2);
+
+        // Prendo gli ultimi 3 e li passo da HEX a DEC
+        char operandString[3] = {riga[3], riga[4], riga[5]};
+        int operandCode = HextoDec(operandString, 3);
+
+        //Creao unico intero
+        int number = (opCode*1000)+operandCode;
         // Salvo in "memoria" il numero e incremento l'index
         if (number == -999999)
             break;
@@ -248,7 +262,7 @@ void instructionCycle(int *accumulator, int *instructionCounter, int *instructio
         case POW:
         {
             int base = *accumulator;
-            int sum = base;
+            long sum = base;
             int exp = memory[*operand];
 
             for (int i = 1; i < exp; i++)
@@ -257,6 +271,13 @@ void instructionCycle(int *accumulator, int *instructionCounter, int *instructio
             }
 
             *accumulator = sum;
+            checkOverflow(*accumulator, stateFlag);
+            if (*stateFlag == OVERFLOW)
+            {
+                printf(BOLD RED "***[ERROR] Simpletron execution abnormally terminated ***" RESET);
+                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
+                return;
+            }
         }
         break;
         case BRANCH:
@@ -290,4 +311,38 @@ void checkOverflow(int result, int *stateFlag)
     {
         *stateFlag = OVERFLOW;
     }
+}
+
+int HextoDec(char *hexNum, int length)
+{
+    int exp = 0;
+    int sum = 0;
+
+    for (int i = length - 1; i >= 0; i--)
+    {
+        char character = hexNum[i];
+        int intCharacter = 0;
+
+        if (character >= '0' && character <= '9')
+        {
+            intCharacter = character - '0';
+        }
+        else if (character >= 'A' && character <= 'F')
+        {
+            intCharacter = character - 'A' + 10;
+        }
+        else if (character >= 'a' && character <= 'f')
+        {
+            intCharacter = character - 'a' + 10;
+        }
+        else
+        {
+            return -1; // Carattere non valido
+        }
+
+        sum += intCharacter * (int)pow(16, exp);
+        exp++;
+    }
+
+    return sum;
 }
