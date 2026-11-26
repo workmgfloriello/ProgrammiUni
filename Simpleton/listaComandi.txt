@@ -7,7 +7,7 @@
 #define SUBTRACT 31
 #define DIVIDE 32
 #define MULTIPLY 33
-#define REST 34
+#define MOD 34
 #define POW 35
 #define BRANCH 40
 #define BRANCHNEG 41

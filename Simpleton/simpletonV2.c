@@ -1,48 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-
-// DEFINE ESSENZIALI
-// Lettura file e diensizoni memoria
-#define MAX_RIGA 256
-#define MEMORY_SIZE 1000
-// Lista comandi (operationCode)
-#define READ 10
-#define WRITE 11
-#define NEWLINE 12
-#define LOAD 20
-#define STORE 21
-#define ADD 30
-#define SUBTRACT 31
-#define DIVIDE 32
-#define MULTIPLY 33
-#define REST 34
-#define POW 35
-#define BRANCH 40
-#define BRANCHNEG 41
-#define BRANCHZERO 42
-#define HALT 43
-// Lista stati dell'istruzione (flag)
-#define ERROR 0
-#define OVERFLOW -1
-#define READY 1
-
-// DEFINE DI STILE
-#define RESET "\033[0m"
-#define BOLD "\033[1m"
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define CYAN "\033[36m"
+#include "./utils/utilsFunction.h"
+#include "./function/SMLFunction.h"
 
 void welcome();
 void loadProgram(int *memory, char *fileName);
 void dump(int, int, int, int, int, int, int[MEMORY_SIZE]);
 void instructionCycle(int *, int *, int *, int *, int *, int *, int *);
-void checkOverflow(int, int *);
-int HextoDec(char *, int);
 
 int main()
 {
@@ -55,9 +20,10 @@ int main()
     int operationCode = 0;       // Operazione che viene eseguita(prime due cifre)
     int operand = 0;             // Locazione di memoria su cui avviene l'operazione (ultime due cifre)
     int stateFlag = READY;       // Flag di stato di un operazione
+    int EAX = 0;                 // REgsitro Extended Accumulator Register
 
     welcome();
-    loadProgram(memory, "test.spl");
+    loadProgram(memory, "virgolaFissa.spl");
     // dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, memory);
     instructionCycle(&accumulator, &instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag, memory);
     return 0;
@@ -114,8 +80,8 @@ void loadProgram(int *memory, char *fileName)
         char operandString[3] = {riga[3], riga[4], riga[5]};
         int operandCode = HextoDec(operandString, 3);
 
-        //Creao unico intero
-        int number = (opCode*1000)+operandCode;
+        // Creao unico intero
+        int number = (opCode * 1000) + operandCode;
         // Salvo in "memoria" il numero e incremento l'index
         if (number == -999999)
             break;
@@ -132,217 +98,126 @@ void loadProgram(int *memory, char *fileName)
     printf("*** Program loading completed ***\n*** Program execution begins ***");
 }
 
-void dump(int accumulator, int instructionCounter, int instructionRegister, int operationCode, int operand, int stateFlag, int memory[MEMORY_SIZE])
+void instructionCycle(int *accumulator,int *instructionCounter,int *instructionRegister,int *operationCode,int *operand,int *stateFlag,int *memory)
 {
-    printf("\n" BOLD YELLOW "REGISTERS:\n" RESET);
-
-    printf(GREEN BOLD "%-22s%+05d\n" RESET, "accumulator", accumulator);
-    printf(GREEN "%-22s%02d\n" RESET, "instructionCounter", instructionCounter);
-    printf(GREEN BOLD "%-22s%+05d\n" RESET, "instructionRegister", instructionRegister);
-    printf(GREEN "%-22s%02d\n" RESET, "operationCode", operationCode);
-    printf(GREEN "%-22s%02d\n" RESET, "operand", operand);
-    printf(GREEN BOLD "%-22s%02d\n" RESET, "stateFlag", stateFlag);
-
-    printf("\n" BOLD YELLOW "MEMORY:\n" RESET);
-
-    printf("%-5s", "");
-
-    for (int i = 0; i < 10; i++)
-    {
-        printf(CYAN "  %-5d" RESET, i);
-    }
-
-    for (int i = 0; i < MEMORY_SIZE; i++)
-    {
-        if (i % 10 == 0)
-            printf("\n" BLUE "%-5d" RESET, i);
-
-        if (memory[i] < 0)
-            printf(RED "%+06d  " RESET, memory[i]);
-        else
-            printf("%+06d  ", memory[i]);
-    }
-
-    printf("\n");
-}
-
-void instructionCycle(int *accumulator, int *instructionCounter, int *instructionRegister, int *operationCode, int *operand, int *stateFlag, int *memory)
-{
-    // Prende istruzione della memoria
-
     while (1)
     {
 
         *instructionRegister = memory[*instructionCounter];
-        (*instructionCounter)++; // incrementa il counter cosi passera alla pross. istruzione
+        (*instructionCounter)++;
 
-        // Estrare operationCode e operand
         *operationCode = *instructionRegister / 1000;
         *operand = *instructionRegister % 1000;
 
         *stateFlag = READY;
-        // Verifico Opzione
+
+        int stop = 0;
+
         switch (*operationCode)
         {
+
         case READ:
-            do
-            {
-                if (*stateFlag == ERROR)
-                {
-                    printf(BOLD RED "*** [ERROR] Value not included in the range -9999 +9999 ***" RESET);
-                }
-                printf("\n?=> ");
-                scanf("%d", &memory[*operand]);
-                if (memory[*operand] < -9999 || memory[*operand] > +9999)
-                    *stateFlag = ERROR;
-            } while (*stateFlag == ERROR);
+            smlRead(memory, *operand, stateFlag);
             break;
+
         case WRITE:
-            printf("\n%+06d\n", memory[*operand]);
+            smlWrite(memory, *operand);
             break;
-        case LOAD:
-            *accumulator = memory[*operand];
-            break;
+
         case NEWLINE:
-            printf("\n");
+            smlNewline();
             break;
+
+        case LOAD:
+            smlLoad(accumulator, memory, *operand);
+            break;
+
         case STORE:
-            memory[*operand] = *accumulator;
+            smlStore(*accumulator, memory, *operand);
             break;
+
         case ADD:
-            *accumulator += memory[*operand];
-            checkOverflow(*accumulator, stateFlag);
-            if (*stateFlag == OVERFLOW)
-            {
-                printf(BOLD RED "***[ERROR] Simpletron execution abnormally terminated ***" RESET);
-                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
-                break;
-            }
+            stop = smlAdd(accumulator, memory, *operand,
+                          stateFlag, instructionCounter,
+                          instructionRegister, operationCode, operand);
             break;
+
         case SUBTRACT:
-            *accumulator -= memory[*operand];
-            checkOverflow(*accumulator, stateFlag);
-            if (*stateFlag == OVERFLOW)
-            {
-                printf(BOLD RED "***[ERROR] Simpletron execution abnormally terminated ***" RESET);
-                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
-                break;
-            }
+            stop = smlSubtract(accumulator, memory, *operand,
+                               stateFlag, instructionCounter,
+                               instructionRegister, operationCode, operand);
             break;
+
         case DIVIDE:
-            if (memory[*operand] == 0)
-            {
-                *stateFlag = ERROR;
-                printf(BOLD RED "***[ERROR] Attempt to divide by zero ***" RESET);
-                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
-                break;
-            }
-            *accumulator /= memory[*operand];
+            stop = smlDivide(accumulator, memory, *operand);
             break;
+
         case MULTIPLY:
-            *accumulator *= memory[*operand];
-            checkOverflow(*accumulator, stateFlag);
-            if (*stateFlag == OVERFLOW)
-            {
-                printf(BOLD RED "***[ERROR] Simpletron execution abnormally terminated ***" RESET);
-                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
-                break;
-            }
+            stop = smlMultiply(accumulator, memory, *operand,
+                               stateFlag, instructionCounter,
+                               instructionRegister, operationCode, operand);
             break;
-        case REST:
-            *accumulator %= memory[*operand];
-            checkOverflow(*accumulator, stateFlag);
-            if (*stateFlag == OVERFLOW)
-            {
-                printf(BOLD RED "***[ERROR] Simpletron execution abnormally terminated ***" RESET);
-                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
-                break;
-            }
+
+        case MOD:
+            stop = smlMOD(accumulator, memory, *operand);
             break;
+
         case POW:
-        {
-            int base = *accumulator;
-            long sum = base;
-            int exp = memory[*operand];
+            stop = smlPow(accumulator, memory, *operand,
+                          stateFlag, instructionCounter,
+                          instructionRegister, operationCode, operand);
+            break;
 
-            for (int i = 1; i < exp; i++)
-            {
-                sum *= base;
-            }
-
-            *accumulator = sum;
-            checkOverflow(*accumulator, stateFlag);
-            if (*stateFlag == OVERFLOW)
-            {
-                printf(BOLD RED "***[ERROR] Simpletron execution abnormally terminated ***" RESET);
-                dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
-                return;
-            }
-        }
-        break;
         case BRANCH:
-            *instructionCounter = *operand;
+            smlBranch(instructionCounter, *operand);
             break;
+
         case BRANCHNEG:
-            if (*accumulator < 0)
-            {
-                *instructionCounter = *operand;
-            }
+            smlBranchNeg(*accumulator, instructionCounter, *operand);
             break;
+
         case BRANCHZERO:
-            if (*accumulator == 0)
-            {
-                *instructionCounter = *operand;
-            }
+            smlBranchZero(*accumulator, instructionCounter, *operand);
             break;
+
+        case READ_F:
+            smlReadFloat(memory, *operand, stateFlag);
+            break;
+
+        case WRITE_F:
+            smlWriteFloat(memory, *operand);
+            break;
+
         case HALT:
-            printf("*** Simpletron execution terminated ***");
-            dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, memory);
+            smlHalt(
+                *accumulator,
+                *instructionCounter,
+                *instructionRegister,
+                *operationCode,
+                *operand,
+                *stateFlag,
+                memory);
             return;
+
         default:
-            break;
+            printf(BOLD RED
+                   "\n*** [ERROR] Invalid operation code: %d ***\n" RESET,
+                   *operationCode);
+            return;
+        }
+
+        if (stop)
+        {
+            dump(
+                *accumulator,
+                *instructionCounter,
+                *instructionRegister,
+                *operationCode,
+                *operand,
+                *stateFlag,
+                memory);
+            return;
         }
     }
 }
 
-void checkOverflow(int result, int *stateFlag)
-{
-    if (result < -99999 || result > +99999)
-    {
-        *stateFlag = OVERFLOW;
-    }
-}
-
-int HextoDec(char *hexNum, int length)
-{
-    int exp = 0;
-    int sum = 0;
-
-    for (int i = length - 1; i >= 0; i--)
-    {
-        char character = hexNum[i];
-        int intCharacter = 0;
-
-        if (character >= '0' && character <= '9')
-        {
-            intCharacter = character - '0';
-        }
-        else if (character >= 'A' && character <= 'F')
-        {
-            intCharacter = character - 'A' + 10;
-        }
-        else if (character >= 'a' && character <= 'f')
-        {
-            intCharacter = character - 'a' + 10;
-        }
-        else
-        {
-            return -1; // Carattere non valido
-        }
-
-        sum += intCharacter * (int)pow(16, exp);
-        exp++;
-    }
-
-    return sum;
-}
