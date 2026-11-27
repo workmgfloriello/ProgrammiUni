@@ -21,7 +21,7 @@ int main()
     int EAX = 0;                 // Regsitro Extended Accumulator Register
 
     welcome();
-    loadProgram(memory, "virgolaFissa.spl");
+    loadProgram(memory, "testTotal.spl");
     // dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, memory);
     instructionCycle(&accumulator, &instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag,&EAX, memory);
     return 0;
