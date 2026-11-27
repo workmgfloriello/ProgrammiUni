@@ -6,8 +6,8 @@
 +16032
 //Carico A nell'accumulatore
 +14050
-//Faccio la sottrazione in float
-+36000
+//Faccio la molti in float
++37000
 //Store del risultato 
 +15056
 //Stampo il numero

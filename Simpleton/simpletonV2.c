@@ -111,8 +111,6 @@ void instructionCycle(int *accumulator, int *instructionCounter, int *instructio
 
         *stateFlag = READY;
 
-        int stop = 0;
-
         switch (*operationCode)
         {
         case READ:
@@ -120,74 +118,78 @@ void instructionCycle(int *accumulator, int *instructionCounter, int *instructio
             break;
 
         case WRITE:
-            smlWrite(memory, *operand);
+            smlWrite(memory, *operand, stateFlag);
             break;
 
         case NEWLINE:
-            smlNewline();
+            smlNewline(stateFlag);
             break;
 
         case LOAD:
-            smlLoad(accumulator, memory, *operand);
+            smlLoad(accumulator, memory, *operand, stateFlag);
             break;
         
         case LOAD_EAX:
-            smlLoadEAX(EAX ,memory,*operand);
+            smlLoadEAX(EAX, memory, *operand, stateFlag);
             break; 
 
         case STORE_EAX:
-            smlStoreEAX(EAX, memory, *operand);
+            smlStoreEAX(EAX, memory, *operand, stateFlag);
             break;
 
         case STORE:
-            smlStore(*accumulator, memory, *operand);
+            smlStore(accumulator, memory, *operand, stateFlag);
             break;
 
         case ADD:
-            stop = smlAdd(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            smlAdd(accumulator, memory, *operand, stateFlag);
             break;
         case ADD_F:
-            stop= smlAddFloat(accumulator, memory, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            smlAddFloat(accumulator, EAX, stateFlag);
             break;
 
         case SUBTRACT:
-            stop = smlSubtract(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+             smlSubtract(accumulator, memory, *operand, stateFlag);
             break;
 
         case SUBTRACT_F:
-            stop=smlSubtractFloat(accumulator, memory, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            smlSubtractFloat(accumulator, EAX, stateFlag);
             break;
 
         case DIVIDE:
-            stop = smlDivide(accumulator, memory, *operand);
+            smlDivide(accumulator, memory, *operand, stateFlag);
             break;
 
         case DIVIDE_F:
-            stop = smlDivideFloat(accumulator,EAX,stateFlag);
+            smlDivideFloat(accumulator,EAX,stateFlag);
             break;
             
         case MULTIPLY:
-            stop = smlMultiply(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            smlMultiply(accumulator, memory, *operand, stateFlag);
+            break;
+
+        case MULTIPLY_F:
+            smlMultiplyFloat(accumulator, EAX, stateFlag);
             break;
 
         case MOD:
-            stop = smlMOD(accumulator, memory, *operand);
+            smlMOD(accumulator, memory, *operand, stateFlag);
             break;
 
         case POW:
-            stop = smlPow(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            smlPow(accumulator, memory, *operand, stateFlag);
             break;
 
         case BRANCH:
-            smlBranch(instructionCounter, *operand);
+            smlBranch(instructionCounter, *operand, stateFlag);
             break;
 
         case BRANCHNEG:
-            smlBranchNeg(*accumulator, instructionCounter, *operand);
+            smlBranchNeg(*accumulator, instructionCounter, *operand, stateFlag);
             break;
 
         case BRANCHZERO:
-            smlBranchZero(*accumulator, instructionCounter, *operand);
+            smlBranchZero(*accumulator, instructionCounter, *operand, stateFlag);
             break;
 
         case READ_F:
@@ -195,20 +197,32 @@ void instructionCycle(int *accumulator, int *instructionCounter, int *instructio
             break;
 
         case WRITE_F:
-            smlWriteFloat(memory, *operand);
+            smlWriteFloat(memory, *operand, stateFlag);
             break;
 
         case HALT:
+            *stateFlag = COMPLETE;
             smlHalt(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, *EAX, memory);
             return;
 
         default:
             printf(BOLD RED "\n*** [ERROR] Invalid operation code: %d ***\n" RESET, *operationCode);
-            return;
+            *stateFlag = ERROR;
+            break;
         }
 
-        if (stop)
+        if (*stateFlag == READY)
         {
+            *stateFlag = COMPLETE;
+        }
+
+        if (*stateFlag == ERROR || *stateFlag == OVERF)
+        {
+            if (*stateFlag == OVERF)
+            {
+                printf(BOLD RED "\n*** [ERROR] Overflow or underflow: Simpletron execution terminated ***\n" RESET);
+            }
+
             dump(*accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, *EAX, memory);
             return;
         }

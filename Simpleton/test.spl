@@ -5,11 +5,9 @@
 //Carico A nell'accumulatore
 +14032
 //Sottrago B aell'accumulatore
-+1F033
++21033
 //Salvo il risulato nella cella 52(Dec)
 +15034
-//Se il risultato è negativo salto all'inzio
-+29000
 //Stampo la cella 52(A)
 +0B034
 //ESCO

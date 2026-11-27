@@ -37,15 +37,12 @@
 #define SUBTRACT_F 53
 #define DIVIDE_F   54
 #define MULTIPLY_F 55
-#define MOD_F      56
-#define POW_F      57
 //-----------------------------
 // FLAGS
+#define OVERF    -1
 #define ERROR    0
-#define OVERF -1
 #define READY    1
-#define INTEGER  2
-#define FLOAT    3
+#define COMPLETE 2
 
 // COLORI
 #define RESET  "\033[0m"
@@ -58,7 +55,7 @@
 #define DIM    "\033[2m"   
 
 static void dump(int accumulator, int instructionCounter, int instructionRegister, int operationCode, int operand, int stateFlag,int EAX, int memory[MEMORY_SIZE]) {
-    const char *flagColor = (stateFlag == READY) ? GREEN : RED;
+    const char *flagColor = (stateFlag == READY || stateFlag == COMPLETE) ? GREEN : RED;
 
     printf("\n" BOLD YELLOW "REGISTERS:\n" RESET);
 
@@ -80,203 +77,220 @@ static void dump(int accumulator, int instructionCounter, int instructionRegiste
 
     for (int i = 0; i < MEMORY_SIZE; i++) {
         if (i % 10 == 0)
-            printf("\n" BOLD BLUE "%-5d" RESET, i);
+            printf("\n" BOLD BLUE "%-4d" RESET, i);
 
         if (memory[i] < 0)
-            printf(RED "%+06d  " RESET, memory[i]);
+            printf(RED "%+09d  " RESET, memory[i]);
         else if (memory[i] == 0)
-            printf(DIM "%+06d  " RESET, memory[i]);
+            printf(DIM "%+09d  " RESET, memory[i]);
         else
-            printf(GREEN "%+06d  " RESET, memory[i]);
+            printf(GREEN "%+09d  " RESET, memory[i]);
     }
 
     printf("\n");
 }
 
-// Controllo OVERF
-static int smlCheckOverflow(int accumulator, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *operand,int *EAX, int memory[]) {
-    checkOverflow(accumulator, stateFlag);
-
-    if (*stateFlag == OVERF) {
-        printf(BOLD RED "\n*** [ERROR] Simpletron execution abnormally terminated ***\n" RESET);
-
-        dump(accumulator, *instructionCounter, *instructionRegister, *operationCode, *operand, *stateFlag, *EAX, memory);
-
-        return 1;
+// Dopo un'operazione con possibile overflow:
+// checkOverflow imposta OVERF se serve, altrimenti l'istruzione è COMPLETE
+static void smlFinishChecked(int value, int *stateFlag) {
+    checkOverflow(value, stateFlag);
+    if (*stateFlag != OVERF) {
+        *stateFlag = COMPLETE;
     }
-
-    return 0;
 }
 
 // READ
 static void smlRead(int *memory, int operand, int *stateFlag) {
-    do {
-        if (*stateFlag == ERROR) {
-            printf(BOLD RED "*** [ERROR] Value not included in the range -9999 +9999 ***" RESET);
-        }
+    int value;
 
-        printf("\n?=> ");
-        scanf("%d", &memory[operand]);
+    // input non numerico: richiedo finché non arriva un intero
+    while (printf("\n?=> "), scanf("%d", &value) != 1) {
+        while (getchar() != '\n');   // svuota il buffer
+        *stateFlag = ERROR;
+        printf(BOLD RED "*** [ERROR] Invalid input ***" RESET);
+    }
 
-        *stateFlag = READY;
+    checkOverflow(value, stateFlag);   // imposta OVERF se fuori range
 
-        if (memory[operand] < -9999 || memory[operand] > 9999) {
-            *stateFlag = ERROR;
-        }
+    if (*stateFlag == OVERF) {
+        return;                        // non scrivo in memoria un valore non valido
+    }
 
-    } while (*stateFlag == ERROR);
+    memory[operand] = value;
+    *stateFlag = COMPLETE;
 }
-
 // WRITE
-static void smlWrite(int memory[], int operand) {
-    printf("\n%+06d\n", memory[operand]);
+static void smlWrite(int memory[], int operand, int *stateFlag) {
+    printf("\n%+09d\n", memory[operand]);
+    *stateFlag = COMPLETE;
 }
 
 // NEWLINE
-static void smlNewline(void) {
+static void smlNewline(int *stateFlag) {
     printf("\n");
+    *stateFlag = COMPLETE;
 }
 
 // LOAD
-static void smlLoad(int *accumulator, int memory[], int operand) {
+static void smlLoad(int *accumulator, int memory[], int operand, int *stateFlag) {
     *accumulator = memory[operand];
+    *stateFlag = COMPLETE;
 }
 
-//LOAD_EAX
-static void smlLoadEAX(int *EAX, int memory[], int operand){
+// LOAD_EAX
+static void smlLoadEAX(int *EAX, int memory[], int operand, int *stateFlag) {
     *EAX = memory[operand];
+    *stateFlag = COMPLETE;
 }
 
 // STORE_EAX
-static void smlStoreEAX(int *EAX, int memory[], int operand){
+static void smlStoreEAX(int *EAX, int memory[], int operand, int *stateFlag) {
     memory[operand] = *EAX;
+    *stateFlag = COMPLETE;
 }
 
 // STORE
-static void smlStore(int accumulator, int memory[], int operand) {
-    memory[operand] = accumulator;
+static void smlStore(int *accumulator, int memory[], int operand, int *stateFlag) {
+    memory[operand] = *accumulator;
+    *stateFlag = COMPLETE;
 }
 
 // ADD
-static int smlAdd(int *accumulator, int memory[], int operand, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX) {
+static void smlAdd(int *accumulator, int memory[], int operand, int *stateFlag) {
     *accumulator += memory[operand];
-
-    return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+    smlFinishChecked(*accumulator, stateFlag);
 }
 
-//ADD FLOAT
-static int smlAddFloat(int *accumulator, int memory[], int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX){
+// ADD FLOAT
+static void smlAddFloat(int *accumulator, int *EAX, int *stateFlag) {
     float secondOperand = memIntToFloat(*EAX);
     float firstOperand = memIntToFloat(*accumulator);
     float sum = firstOperand + secondOperand;
     *accumulator = floatToMemInt(sum, stateFlag);
-    return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+    smlFinishChecked(*accumulator, stateFlag);
 }
 
 // SUBTRACT
-static int smlSubtract(int *accumulator, int memory[], int operand, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX) {
+static void smlSubtract(int *accumulator, int memory[], int operand, int *stateFlag) {
     *accumulator -= memory[operand];
-
-    return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+    smlFinishChecked(*accumulator, stateFlag);
 }
 
-//SUBTRACT FLOAT
-static int smlSubtractFloat(int *accumulator, int memory[], int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX){
+// SUBTRACT FLOAT
+static void smlSubtractFloat(int *accumulator, int *EAX, int *stateFlag) {
     float secondOperand = memIntToFloat(*EAX);
     float firstOperand = memIntToFloat(*accumulator);
-    float sum = firstOperand - secondOperand;
-    *accumulator = floatToMemInt(sum, stateFlag);
-    return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+    float diff = firstOperand - secondOperand;
+    *accumulator = floatToMemInt(diff, stateFlag);
+    smlFinishChecked(*accumulator, stateFlag);
 }
 
 // DIVIDE
-static int smlDivide(int *accumulator, int memory[], int operand) {
+static void smlDivide(int *accumulator, int memory[], int operand, int *stateFlag) {
     if (memory[operand] == 0) {
         printf(BOLD RED "*** [ERROR] Attempt to divide by zero ***" RESET);
-        return 1;
+        *stateFlag = ERROR;
+        return;
     }
 
     *accumulator /= memory[operand];
-    return 0;
+    *stateFlag = COMPLETE;
 }
 
-//DIVIDE FLOAT
-static int smlDivideFloat(int *accumulator, int *EAX, int *stateFlag){
-    float firstOperand = memIntToFloat(*EAX);
-    float secondOperand = memIntToFloat(*accumulator);
+// DIVIDE FLOAT
+static void smlDivideFloat(int *accumulator, int *EAX, int *stateFlag) {
+    float divisor = memIntToFloat(*EAX);
+    float dividend = memIntToFloat(*accumulator);
 
-    if(secondOperand == 0){
+    if (divisor == 0.0f) {
         printf(BOLD RED "*** [ERROR] Attempt to divide by zero ***" RESET);
-        return 1;
+        *stateFlag = ERROR;
+        return;
     }
 
-    float divisin = (float)secondOperand/firstOperand;
+    float division = dividend / divisor;
 
-    *accumulator = floatToMemInt(divisin, stateFlag);
+    *accumulator = floatToMemInt(division, stateFlag);
+    smlFinishChecked(*accumulator, stateFlag);
 }
-// MULTIPLY
-static int smlMultiply(int *accumulator, int memory[], int operand, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX) {
-    *accumulator *= memory[operand];
 
-    return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+// MULTIPLY
+static void smlMultiply(int *accumulator, int memory[], int operand, int *stateFlag) {
+    *accumulator *= memory[operand];
+    smlFinishChecked(*accumulator, stateFlag);
+}
+
+// MULTIPLY FLOAT
+static void smlMultiplyFloat(int *accumulator, int *EAX, int *stateFlag) {
+    float firstOperand = memIntToFloat(*EAX);
+    float secondOperand = memIntToFloat(*accumulator);
+    float mult = firstOperand * secondOperand;
+    *accumulator = floatToMemInt(mult, stateFlag);
+    smlFinishChecked(*accumulator, stateFlag);
 }
 
 // MOD
-static int smlMOD(int *accumulator, int memory[], int operand) {
+static void smlMOD(int *accumulator, int memory[], int operand, int *stateFlag) {
     if (memory[operand] == 0) {
         printf(BOLD RED "*** [ERROR] Attempt to calculate remainder by zero ***" RESET);
-        return 1;
+        *stateFlag = ERROR;
+        return;
     }
 
     *accumulator %= memory[operand];
-    return 0;
+    *stateFlag = COMPLETE;
 }
 
 // POW
-static int smlPow(int *accumulator, int memory[], int operand, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX) {
+static void smlPow(int *accumulator, int memory[], int operand, int *stateFlag) {
     int base = *accumulator;
     int exp = memory[operand];
     long long result = 1;
 
     if (exp < 0) {
         printf(BOLD RED "*** [ERROR] Negative exponent ***" RESET);
-        return 1;
+        *stateFlag = ERROR;
+        return;
     }
 
     for (int i = 0; i < exp; i++) {
         result *= base;
 
+        // appena esce dal range mi fermo: ci pensa checkOverflow a impostare OVERF
         if (result < -9999 || result > 9999) {
-            *stateFlag = OVERF;
             break;
         }
     }
 
+    checkOverflow((int)result, stateFlag);
     if (*stateFlag == OVERF) {
-        return smlCheckOverflow((int)result, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+        return;
     }
 
     *accumulator = (int)result;
-    return 0;
+    *stateFlag = COMPLETE;
 }
 
 // BRANCH
-static void smlBranch(int *instructionCounter, int operand) {
+static void smlBranch(int *instructionCounter, int operand, int *stateFlag) {
     *instructionCounter = operand;
+    *stateFlag = COMPLETE;
 }
 
 // BRANCHNEG
-static void smlBranchNeg(int accumulator, int *instructionCounter, int operand) {
+static void smlBranchNeg(int accumulator, int *instructionCounter, int operand, int *stateFlag) {
     if (accumulator < 0) {
         *instructionCounter = operand;
     }
+    *stateFlag = COMPLETE;
 }
 
 // BRANCHZERO
-static void smlBranchZero(int accumulator, int *instructionCounter, int operand) {
+static void smlBranchZero(int accumulator, int *instructionCounter, int operand, int *stateFlag) {
     if (accumulator == 0) {
         *instructionCounter = operand;
     }
+    *stateFlag = COMPLETE;
 }
 
 // READ FLOAT
@@ -293,28 +307,35 @@ static void smlReadFloat(int memory[], int operand, int *stateFlag) {
 
         scanf("%f", &temp);
 
-        if (temp < -99.99 || temp >99.99) {
+        if (temp < -9999.999 || temp > 9999.999) {
             *stateFlag = ERROR;
             continue;
         }
 
+        *stateFlag = READY;
         value = floatToMemInt(temp, stateFlag);
 
     } while (*stateFlag == ERROR);
 
+    if (*stateFlag == OVERF) {
+        return;
+    }
+
     memory[operand] = value;
+    *stateFlag = COMPLETE;
 }
 
 // WRITE FLOAT
-static void smlWriteFloat(int memory[], int operand) {
-    printf("\n%.2f\n", memIntToFloat(memory[operand]));
+static void smlWriteFloat(int memory[], int operand, int *stateFlag) {
+    printf("\n%.3f\n", memIntToFloat(memory[operand]));
+    *stateFlag = COMPLETE;
 }
 
 // HALT
-static void smlHalt(int accumulator, int instructionCounter, int instructionRegister, int operationCode, int operand, int stateFlag,int EAX, int memory[]) {
+static void smlHalt(int accumulator, int instructionCounter, int instructionRegister, int operationCode, int operand, int stateFlag, int EAX, int memory[]) {
     printf("*** Simpletron execution terminated ***");
 
-    dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag,EAX, memory);
+    dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, EAX, memory);
 }
 
 #endif
