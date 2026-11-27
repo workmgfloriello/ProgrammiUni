@@ -21,7 +21,7 @@ int main()
     int EAX = 0;                 // Regsitro Extended Accumulator Register
 
     welcome();
-    loadProgram(memory, "totaleTreValori.spl");
+    loadProgram(memory, "virgolaFissa.spl");
     // dump(accumulator, instructionCounter, instructionRegister, operationCode, operand, stateFlag, memory);
     instructionCycle(&accumulator, &instructionCounter, &instructionRegister, &operationCode, &operand, &stateFlag,&EAX, memory);
     return 0;
@@ -147,16 +147,25 @@ void instructionCycle(int *accumulator, int *instructionCounter, int *instructio
             stop = smlAdd(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
         case ADD_F:
-            stop= smlAddFloat(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            stop= smlAddFloat(accumulator, memory, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
+
         case SUBTRACT:
             stop = smlSubtract(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
+            break;
+
+        case SUBTRACT_F:
+            stop=smlSubtractFloat(accumulator, memory, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;
 
         case DIVIDE:
             stop = smlDivide(accumulator, memory, *operand);
             break;
 
+        case DIVIDE_F:
+            stop = smlDivideFloat(accumulator,EAX,stateFlag);
+            break;
+            
         case MULTIPLY:
             stop = smlMultiply(accumulator, memory, *operand, stateFlag, instructionCounter, instructionRegister, operationCode, operand, EAX);
             break;

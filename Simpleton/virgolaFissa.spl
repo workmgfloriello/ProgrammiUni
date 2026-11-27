@@ -3,11 +3,11 @@
 //Leggo un numeor intero A e lo salvo nella cella 50
 +32032
 //Assegno il valore ad EAX
-+16050
++16032
 //Carico A nell'accumulatore
-+14032
-//Faccio la somma in float
-+34000
++14050
+//Faccio la sottrazione in float
++36000
 //Store del risultato 
 +15056
 //Stampo il numero

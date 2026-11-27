@@ -34,6 +34,11 @@
 #define WRITE_F    51
 //OPERAZIONI NUMERI CON VIRGOLA 
 #define ADD_F      52
+#define SUBTRACT_F 53
+#define DIVIDE_F   54
+#define MULTIPLY_F 55
+#define MOD_F      56
+#define POW_F      57
 //-----------------------------
 // FLAGS
 #define ERROR    0
@@ -160,7 +165,7 @@ static int smlAdd(int *accumulator, int memory[], int operand, int *stateFlag, i
 }
 
 //ADD FLOAT
-static int smlAddFloat(int *accumulator, int memory[], int operand, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX){
+static int smlAddFloat(int *accumulator, int memory[], int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX){
     float secondOperand = memIntToFloat(*EAX);
     float firstOperand = memIntToFloat(*accumulator);
     float sum = firstOperand + secondOperand;
@@ -175,6 +180,15 @@ static int smlSubtract(int *accumulator, int memory[], int operand, int *stateFl
     return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
 }
 
+//SUBTRACT FLOAT
+static int smlSubtractFloat(int *accumulator, int memory[], int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX){
+    float secondOperand = memIntToFloat(*EAX);
+    float firstOperand = memIntToFloat(*accumulator);
+    float sum = firstOperand - secondOperand;
+    *accumulator = floatToMemInt(sum, stateFlag);
+    return smlCheckOverflow(*accumulator, stateFlag, instructionCounter, instructionRegister, operationCode, memoryOperand, EAX, memory);
+}
+
 // DIVIDE
 static int smlDivide(int *accumulator, int memory[], int operand) {
     if (memory[operand] == 0) {
@@ -186,6 +200,20 @@ static int smlDivide(int *accumulator, int memory[], int operand) {
     return 0;
 }
 
+//DIVIDE FLOAT
+static int smlDivideFloat(int *accumulator, int *EAX, int *stateFlag){
+    float firstOperand = memIntToFloat(*EAX);
+    float secondOperand = memIntToFloat(*accumulator);
+
+    if(secondOperand == 0){
+        printf(BOLD RED "*** [ERROR] Attempt to divide by zero ***" RESET);
+        return 1;
+    }
+
+    float divisin = (float)secondOperand/firstOperand;
+
+    *accumulator = floatToMemInt(divisin, stateFlag);
+}
 // MULTIPLY
 static int smlMultiply(int *accumulator, int memory[], int operand, int *stateFlag, int *instructionCounter, int *instructionRegister, int *operationCode, int *memoryOperand, int *EAX) {
     *accumulator *= memory[operand];
