@@ -1,0 +1,255 @@
+# Simpleton
+
+Simpleton è un simulatore didattico di una macchina a memoria, scritto in C. Il
+programma carica le istruzioni da un file, le esegue in sequenza e mostra i
+registri e la memoria quando termina o incontra un errore.
+
+Questa guida descrive la versione avviata da `simpletonV2.c` e le funzioni
+definite in `function/SMLFunction.h` e `utils/utilsFunction.h`.
+
+## Compilazione ed esecuzione
+
+È necessario un compilatore C. Con GCC o MinGW, dalla cartella `Simpleton`:
+
+```sh
+gcc -std=c11 simpletonV2.c -lm -o simpleton
+./simpleton
+```
+
+In PowerShell su Windows:
+
+```powershell
+gcc -std=c11 simpletonV2.c -lm -o simpleton.exe
+.\simpleton.exe
+```
+
+Il sorgente carica al momento il file `virgolaFissa.spl`, usando un percorso
+relativo alla cartella di esecuzione. Per provare un altro programma, modifica
+quel file oppure cambia il nome passato a `loadProgram` in `simpletonV2.c`.
+
+`main.c` è una versione precedente e separata: gli opcode, le dimensioni della
+memoria e il formato di caricamento non sono gli stessi. I dettagli qui sotto
+si riferiscono a `simpletonV2.c`.
+
+## Memoria e registri
+
+La macchina ha 1000 celle di memoria, numerate da `0` a `999`. I registri
+principali sono:
+
+| Registro | Funzione |
+| --- | --- |
+| `accumulator` | Accumulatore usato dalle operazioni aritmetiche e da `LOAD`/`STORE`. |
+| `EAX` | Registro esteso usato come secondo operando nelle operazioni in virgola fissa. |
+| `instructionCounter` | Indice della prossima istruzione da eseguire. |
+| `instructionRegister` | Parola prelevata dalla memoria per l'istruzione corrente. |
+| `operationCode` | Opcode estratto dall'istruzione. |
+| `operand` | Indirizzo o valore associato all'istruzione. |
+| `stateFlag` | Stato dell'ultima istruzione eseguita. |
+
+Prima di ogni istruzione il simulatore legge la parola in
+`memory[instructionCounter]`, incrementa il contatore e separa opcode e
+operando. Per una parola numerica `word`, l'estrazione è:
+
+```text
+operationCode = word / 1000
+operand       = word % 1000
+```
+
+Un salto modifica il contatore prima della successiva lettura dell'istruzione.
+
+## Scrivere un programma
+
+Il loader legge `virgolaFissa.spl` riga per riga. Ogni riga di codice deve
+contenere sei caratteri: un carattere iniziale (normalmente `+`), due cifre
+esadecimali per l'opcode e tre cifre esadecimali per l'operando:
+
+```text
++hhhhh
+ ││└─── tre cifre esadecimali dell'operando
+ │└──── due cifre esadecimali dell'opcode
+ └───── carattere iniziale, ignorato dal loader
+```
+
+Opcode e operando nel file sono scritti in esadecimale, ma l'opcode viene
+definito nel codice come numero decimale. Per esempio, `READ` vale `10`
+decimale, cioè `0A` esadecimale. L'operando è anch'esso convertito da
+esadecimale a decimale: l'indirizzo di memoria `80` si scrive `050`, perché
+`0x050 = 80`.
+
+Il loader combina i campi come `opcode * 1000 + operand`. Esempi:
+
+| Riga | Significato |
+| --- | --- |
+| `+0A050` | `READ 80`: leggi un intero nella cella 80. |
+| `+14050` | `LOAD 80`: carica la cella 80 nell'accumulatore. |
+| `+00007` | Parola dati con valore 7, da collocare in una cella dati non eseguita come codice. |
+| `+2B000` | `HALT`: termina il programma. |
+
+Per un indirizzo, il campo a tre cifre va scelto in modo che il valore
+esadecimale sia compreso tra `000` e `3E7` (da 0 a 999). Il loader non controlla
+che il programma o gli indirizzi siano entro i limiti della memoria: assicurati
+che ogni programma contenga al massimo 1000 righe di codice/dati e che gli
+operandi-indirizzo siano validi. Usa cifre esadecimali (`0-9`, `A-F` o `a-f`)
+e non inserire righe vuote. I commenti sono ignorati solo quando la riga inizia
+con `//`.
+
+Il formato attuale interpreta ogni riga tramite i due campi esadecimali. Per
+questo le parole dati positive semplici si possono scrivere con opcode `00`,
+per esempio `+00007`; il segno iniziale non rappresenta un segno numerico. Per
+inserire valori negativi è possibile usare `READ` o calcolarli con le
+istruzioni aritmetiche.
+
+### Esempio: sommare due interi
+
+```text
+// Legge il primo intero nella cella 80.
+// Legge il secondo intero nella cella 81.
++0A050
++0A051
++14050
++1E051
++15052
++0B052
++2B000
+```
+
+Il programma chiede due valori, li somma e stampa il risultato. Gli indirizzi
+80, 81 e 82 sono dati; il contatore delle istruzioni parte invece dalla cella
+0.
+
+## Istruzioni supportate
+
+La colonna “codice nel file” mostra le due cifre esadecimali da usare nel
+campo opcode. L'operando è un indirizzo, salvo dove specificato.
+
+| Istruzione | Opcode decimale | Codice nel file | Effetto |
+| --- | ---: | --- | --- |
+| `READ` | 10 | `0A` | Legge un intero e lo salva nella cella indicata. |
+| `WRITE` | 11 | `0B` | Stampa l'intero contenuto nella cella indicata. |
+| `NEWLINE` | 12 | `0C` | Stampa una nuova riga; l'operando è ignorato. |
+| `LOAD` | 20 | `14` | Copia una cella nell'accumulatore. |
+| `STORE` | 21 | `15` | Copia l'accumulatore in una cella. |
+| `LOAD_EAX` | 22 | `16` | Copia una cella nel registro `EAX`. |
+| `STORE_EAX` | 23 | `17` | Copia `EAX` in una cella. |
+| `ADD` | 30 | `1E` | Somma all'accumulatore il valore nella cella indicata. |
+| `SUBTRACT` | 31 | `1F` | Sottrae dall'accumulatore il valore nella cella indicata. |
+| `DIVIDE` | 32 | `20` | Divide l'accumulatore per il valore nella cella indicata. |
+| `MULTIPLY` | 33 | `21` | Moltiplica l'accumulatore per il valore nella cella indicata. |
+| `MOD` | 34 | `22` | Calcola il resto della divisione per il valore nella cella indicata. |
+| `POW` | 35 | `23` | Eleva l'accumulatore alla potenza contenuta nella cella indicata. |
+| `BRANCH` | 40 | `28` | Salta sempre all'indirizzo indicato. |
+| `BRANCHNEG` | 41 | `29` | Salta all'indirizzo indicato se l'accumulatore è negativo. |
+| `BRANCHZERO` | 42 | `2A` | Salta all'indirizzo indicato se l'accumulatore è zero. |
+| `HALT` | 43 | `2B` | Termina l'esecuzione e mostra registri e memoria. |
+| `READ_F` | 50 | `32` | Legge un numero in virgola fissa nella cella indicata. |
+| `WRITE_F` | 51 | `33` | Stampa come numero in virgola fissa il valore della cella indicata. |
+| `ADD_F` | 52 | `34` | Somma i valori in virgola fissa di accumulatore ed `EAX`. |
+| `SUBTRACT_F` | 53 | `35` | Sottrae il valore di `EAX` da quello dell'accumulatore. |
+| `DIVIDE_F` | 54 | `36` | Divide il valore dell'accumulatore per quello di `EAX`. |
+| `MULTIPLY_F` | 55 | `37` | Moltiplica i valori in virgola fissa di accumulatore ed `EAX`. |
+
+Le istruzioni in virgola fissa lavorano sui registri, non leggono l'operando
+come una cella (tranne `READ_F` e `WRITE_F`). Per usarle, carica i valori
+nell'accumulatore e in `EAX`, ad esempio con `LOAD` e `LOAD_EAX`.
+
+### Esempio: divisione in virgola fissa
+
+Questo frammento legge due numeri in `80` e `81`, calcola il primo diviso il
+secondo e salva il risultato in `82`:
+
+```text
+// Legge due valori in virgola fissa nelle celle 80 e 81.
++32050
++32051
++16051
++14050
++36000
++15052
++33052
++2B000
+```
+
+## Rappresentazione dei numeri
+
+Gli interi sono conservati come `int`. `READ` e le operazioni aritmetiche
+intere usano il controllo di overflow definito in `utils/utilsFunction.h`, che
+segnala valori inferiori a `-99.999.999` o superiori a `99.999.999`.
+
+I numeri in virgola fissa sono codificati internamente come un intero:
+
+```text
+segno * 10.000.000 + parte_intera * 1.000 + parte_frazionaria
+```
+
+La parte frazionaria ha tre cifre decimali. Per esempio `12.345` è codificato
+come `12345`; `-12.345` come `10012345`. `READ_F` accetta valori compresi tra
+`-9999.999` e `9999.999`; i calcoli fuori rappresentazione impostano
+`OVERF`.
+
+## Flag di stato
+
+| Nome | Valore | Significato |
+| --- | ---: | --- |
+| `OVERF` | -1 | Overflow o underflow numerico. |
+| `ERROR` | 0 | Errore generale: ad esempio opcode non valido, divisione/resto per zero o esponente negativo. |
+| `READY` | 1 | Stato iniziale prima di eseguire un'istruzione. |
+| `COMPLETE` | 2 | Istruzione completata senza errori. |
+
+In caso di errore il simulatore stampa il motivo disponibile, mostra il dump e
+ferma il ciclo. Gli input fuori formato durante la lettura vengono richiesti
+nuovamente; gli input numerici fuori dal limite rappresentabile possono invece
+terminare con `OVERF`.
+
+## Funzioni principali
+
+### `simpletonV2.c`
+
+- `main`: inizializza memoria e registri, mostra il messaggio iniziale, carica
+  `virgolaFissa.spl` e avvia il ciclo.
+- `welcome`: stampa il messaggio introduttivo.
+- `loadProgram`: legge il file, salta i commenti `//`, converte i campi
+  esadecimali e li inserisce in memoria.
+- `instructionCycle`: preleva ed esegue le istruzioni, aggiorna il
+  `stateFlag`, interrompe l'esecuzione sugli errori e gestisce `HALT`.
+
+### `function/SMLFunction.h`
+
+- `dump`: stampa i registri e tutte le celle di memoria.
+- `smlFinishChecked`: controlla il risultato numerico e imposta `OVERF` o
+  `COMPLETE`.
+- `smlRead`, `smlWrite`, `smlNewline`: gestiscono input/output interi e nuova
+  riga.
+- `smlLoad`, `smlStore`, `smlLoadEAX`, `smlStoreEAX`: trasferiscono valori tra
+  memoria e registri.
+- `smlAdd`, `smlSubtract`, `smlMultiply`, `smlDivide`, `smlMOD`, `smlPow`:
+  operazioni intere; le divisioni per zero e le potenze con esponente negativo
+  impostano `ERROR`.
+- `smlAddFloat`, `smlSubtractFloat`, `smlMultiplyFloat`, `smlDivideFloat`:
+  operazioni in virgola fissa tra accumulatore ed `EAX`.
+- `smlReadFloat`, `smlWriteFloat`: input/output in virgola fissa.
+- `smlBranch`, `smlBranchNeg`, `smlBranchZero`: salti assoluti e condizionali.
+- `smlHalt`: stampa il messaggio di terminazione e il dump finale.
+
+### `utils/utilsFunction.h`
+
+- `HextoDec`: converte una stringa esadecimale in un intero.
+- `checkOverflow`: imposta `OVERF` se il risultato supera il limite intero
+  configurato.
+- `memIntToFloat` e `floatToMemInt`: convertono tra il formato interno e il
+  valore `float`.
+- `isInteger`: indica tramite il flag se un `float` non ha parte decimale.
+- `divideForZero`: restituisce il codice `ERROR`.
+
+## Limiti noti
+
+- Il nome del file di programma è attualmente scritto direttamente in
+  `main`; non è passato come argomento da riga di comando.
+- Il loader richiede righe nel formato esatto descritto e non valida in modo
+  completo campi errati, righe vuote o programmi più lunghi della memoria.
+- I salti usano indirizzi assoluti e non esistono etichette o un assembler.
+- I valori negativi non si possono inizializzare direttamente con una parola
+  dati nel formato del loader; si possono leggere o calcolare durante
+  l'esecuzione.
+- La lettura intera gestisce input non numerici e richiede un nuovo valore;
+  la lettura in virgola fissa non ha la stessa gestione robusta per testo non
+  numerico.
